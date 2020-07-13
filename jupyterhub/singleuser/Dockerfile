@@ -4,24 +4,24 @@
 # Minimal: https://github.com/jupyter/docker-stacks/tree/83ed2c63671f/minimal-notebook/Dockerfile
 # Base: https://github.com/jupyter/docker-stacks/tree/83ed2c63671f/base-notebook/Dockerfile
 
-FROM jupyter/datascience-notebook:2ce7c06a61a1 as miniconda
+FROM jupyter/datascience-notebook:hub-1.1.0 as miniconda
 RUN conda update conda python && pip install -U 'pip==18.*'
 RUN conda install --quiet --yes -c conda-forge \
-    'jupyter_contrib_nbextensions=0.5*' \
-    'jupyterlab=1.1.1' \
-    'tqdm=4.35*' \
-    'yapf=0.26*' \
-    'nbdime=1.0*' \
-    'jupyter-server-proxy=1.1.0' \
-    'nbconvert=5.5*' && \
-    conda install --quiet --yes -c damianavila82 'rise=5.4.*' && \
-    conda clean -tipsy && \
+    'nbconvert' \
+    'tqdm' \
+    'yapf==0.29*' \
+    'rise==5.6.*' \
+    'nbdime==2.*' && \
+    conda install -q --yes -c conda-forge \
+    'jupyterlab==2.1.*' \
+    'jupyter_contrib_nbextensions==0.5*' \
+    'jupyter-server-proxy==1.4*' && \
     jupyter labextension install \
-    '@jupyterlab/github@1.0.1' \
-    'nbdime-jupyterlab@1.0.0' \
-    '@jupyterlab/toc@1.0.1' \
-    '@jupyterlab/hub-extension@1.0.5' && \
-    pip install ipyparallel==6.2.* jupyterlab-github==1.0.0 escapism && \
+    '@jupyterlab/github' \
+    'nbdime-jupyterlab' \
+    '@jupyterlab/toc' \
+    '@jupyterlab/hub-extension' && \
+    pip install ipyparallel==6.2.* jupyterlab-github escapism && \
     git clone https://github.com/paalka/nbresuse /tmp/nbresuse && pip install /tmp/nbresuse/ && \
     jupyter serverextension enable --py nbresuse --sys-prefix && \
     jupyter serverextension enable jupyter_server_proxy --sys-prefix && \
@@ -29,7 +29,7 @@ RUN conda install --quiet --yes -c conda-forge \
     jupyter nbextension enable --py nbresuse --sys-prefix
 
 
-FROM jupyter/datascience-notebook:2ce7c06a61a1
+FROM jupyter/datascience-notebook:hub-1.1.0
 LABEL maintainer Uninett As <system@uninett.no>
 USER root
 
@@ -123,7 +123,7 @@ RUN mkdir -p /home/notebook/.ipython/profile_default/security/ && chmod go+rwx -
     mkdir -p "$CONDA_DIR/.condatmp" && chmod go+rwx "$CONDA_DIR/.condatmp" && chown notebook:notebook "$CONDA_DIR"
 
 # hadolint ignore=DL3002
-RUN chmod go+w -R "$HOME" && chmod o+w /home
+RUN chmod go+w -R "$HOME" && chmod o+w /home && rm -r /home/notebook
 
 USER notebook
 WORKDIR $HOME

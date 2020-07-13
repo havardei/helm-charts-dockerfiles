@@ -1,10 +1,11 @@
-FROM quay.io/uninett/jupyter-spark:20190815-ea0ec80
+FROM quay.io/uninett/jupyter-spark:20200420-1131dd2
 
 LABEL maintainer Uninett As <system@uninett.no>
 
 USER root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        "eatmydata"           \
         "openmpi-bin=2.1.1-8" \
         "libglfw3" && \
     apt-get -y autoremove && \
@@ -17,61 +18,64 @@ ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH} \
     LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH} \
     NVIDIA_VISIBLE_DEVICES="" \
     NVIDIA_DRIVER_CAPABILITIES=all \
-    PKG_KERAS_VERSION=2.2.4 \
-    PKG_TENSORFLOW_VERSION=1.13.1 \
-    PKG_TENSORFLOW_PROBABILITY_VERSION=0.4.0 \
-    PKG_PYTORCH_VERSION=1.1.0 \
-    PKG_XGBOOST_VERSION=0.81 \
-    PKG_CATBOOST_VERSION=0.12.2 \
-    PKG_LIGHTGBM_VERSION=2.2.3 \
-    PKG_FASTAI_VERSION=1.0.52
+    PKG_KERAS_VERSION=2.3.1 \
+    PKG_TENSORFLOW_VERSION=1.15 \
+    PKG_TENSORFLOW_PROBABILITY_VERSION=0.9.0 \
+    PKG_PYTORCH_VERSION=1.4 \
+    PKG_XGBOOST_VERSION=1.0.2 \
+    PKG_CATBOOST_VERSION=0.22 \
+    PKG_LIGHTGBM_VERSION=2.3.1 \
+    PKG_FASTAI_VERSION=1.0.60
 
 ENV PATH /usr/local/mpi/bin:$PATH
 ENV LD_LIBRARY_PATH /usr/local/mpi/lib:$LD_LIBRARY_PATH
 
-RUN conda install --quiet --yes -c conda-forge \
-    'mkl-service=1.1*' \
-    'pygpu=0.7*' \
-    'theano=1.0*' \
-    'bcolz=1.2.*' \
-    'python-graphviz=0.8*' \
-    'spacy=2.0.*' \
-    'pydot=1.2.*' && \
-    conda clean -tipsy && \
-    conda install --quiet --yes -c pytorch -c fastai \
-    'fastai=1.0*' \
-    'cudatoolkit=10.0' \
-    'pytorch=1.2.0' \
-    'torchvision=0.4*' \
-    'fastprogress=0.1*' && \
-    conda uninstall --force jpeg libtiff -y && \
-    conda install -c conda-forge 'libjpeg-turbo=2.*' && \
-    conda install -y jpeg libtiff && \
+RUN conda config --set channel_priority strict && \
+    eatmydata conda install --quiet --yes -c pytorch -c fastai \
+    'spacy=2.1' \
+    "pytorch=$PKG_PYTORCH_VERSION" \
+    'cudatoolkit=10.1' \
+    'torchvision' \
+    "fastai=$PKG_FASTAI_VERSION"
+
+RUN conda uninstall --force jpeg libtiff -y 
+RUN conda config --set channel_priority false && \
+    eatmydata conda install --quiet --yes -c conda-forge \
+    'mkl-service' \
+    'pygpu' \
+    'libjpeg-turbo=2' \
+    'bcolz' \
+    'jax'   \
+    'python-graphviz' \
+    'jpeg' \
+    'libtiff' \
+    'jupyter_contrib_nbextensions' # This is needed when using fastai with notebooks \
+    'pydot' && \
     conda clean -tipsy
 
-RUN CC="cc -mavx2" pip install --no-cache-dir -I -U --force-reinstall \
-    hyperopt==0.1.* \
-    pycuda==2018.1.1 \
-    keras==2.2.* \
+RUN CC="cc -mavx2" eatmydata pip install --no-cache-dir -I -U --force-reinstall \
+    hyperopt==0.2.* \
+    pycuda==2019.1.2 \
+    "keras==$PKG_KERAS_VERSION" \
     keras-tqdm==2.0.* \
-    kaggle==1.5.* \
-    pandas-summary==0.0.6 \
+    pandas-summary==0.0.7 \
     sklearn_pandas==1.8.* \
     feather-format==0.4.* \
-    plotnine==0.3.0 \
+    plotnine==0.6.0 \
     isoweek==1.3.3 \
-    tensorflow-gpu==1.13.* \
-    tensorflow-probability==0.6.* \
-    tensorboardX==1.7 \
-    opencv-python==3.4.* \
-    hypothesis==3.79.* \
-    mlflow==1.0.* \
-    lightgbm==2.2.* \
-    xgboost==0.81 \
-    catboost==0.12.* \
-    nvidia-ml-py3 \
-    torchtext
-
-RUN pip uninstall -y numpy && pip install numpy==1.16.*
+    torchtext==0.5.0 \
+    kaggle==1.5.* \
+    opencv-python==4.2.* \
+    hypothesis==5.10.* \
+    mlflow==1.7.* \
+    "lightgbm==$PKG_LIGHTGBM_VERSION" \
+    "tensorflow==$PKG_TENSORFLOW_VERSION" \
+    "tensorflow-probability==$PKG_TENSORFLOW_PROBABILITY_VERSION" \
+    "tensorboardx==2.0" \
+    "xgboost==$PKG_XGBOOST_VERSION" \
+    "catboost==$PKG_CATBOOST_VERSION" \
+    sentencepiece \
+    nvidia-ml-py3 && \
+    jupyter lab build
 
 COPY start-notebook.sh /usr/local/bin/
