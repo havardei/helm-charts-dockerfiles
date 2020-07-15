@@ -1,8 +1,6 @@
 FROM jupyterhub/k8s-hub:0.9.0
 
 USER root
-COPY dataporten.py /usr/local/lib/python3.6/dist-packages/oauthenticator/
-COPY z2jh.py jupyterhub_config.py /srv/
 
 # Setup ENV for Appstore to be picked up
 ENV APP_UID=999 \
@@ -17,4 +15,8 @@ ENV HOME=/home/notebook \
     XDG_CACHE_HOME=/home/notebook/.cache/
 RUN apt-get update && apt-get upgrade -y
 
+COPY dataporten.py /usr/local/lib/python3.6/dist-packages/oauthenticator/
+COPY z2jh.py jupyterhub_config.py /srv/
+
 USER notebook
+RUN pip install jupyterhub_idle_culler

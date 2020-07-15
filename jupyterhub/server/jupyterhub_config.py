@@ -57,7 +57,7 @@ if db_type == 'sqlite-pvc':
 elif db_type == "sqlite-memory":
     c.JupyterHub.db_url = "sqlite://"
 else:
-    set_config_if_not_none(c.JupyterHub, "db_url", "hub.db.url")
+    set_config_if_not_none(c.JupyterHub, "db_url", "hub.db_url")
 
 
 for trait, cfg_key in (
@@ -75,9 +75,7 @@ for trait, cfg_key in (
     ('template_paths', None),
     ('template_vars', None),
 ):
-    if cfg_key is None:
-        cfg_key = camelCaseify(trait)
-    set_config_if_not_none(c.JupyterHub, trait, 'hub.' + cfg_key)
+    set_config_if_not_none(c.JupyterHub, trait, 'hub.' + trait)
 
 public_proxy_service_name = os.environ["PROXY_PUBLIC_SERVICE_NAME"]
 c.JupyterHub.ip = os.environ[public_proxy_service_name + "_HOST"]
@@ -435,7 +433,7 @@ for name, service in get_config('hub.services', {}).items():
 
 set_config_if_not_none(c.Spawner, 'cmd', 'singleuser.cmd')
 set_config_if_not_none(c.Spawner, 'default_url', 'singleuser.defaultUrl')
-
+set_config_if_not_none(c.KubeSpawner, 'default_url', 'singleuser.defaultUrl')
 if get_config('debug.enabled', False):
     c.JupyterHub.log_level = 'DEBUG'
     c.Spawner.debug = True
@@ -478,3 +476,5 @@ if isinstance(extra_config, str):
 for key, config_py in sorted(extra_config.items()):
     print("Loading extra config: %s" % key)
     exec(config_py)
+
+print(c,file=sys.stderr)
